@@ -1,16 +1,34 @@
-# order_inventory_manager
 
-A new Flutter project.
+# Order & Inventory Manager
 
-## Getting Started
+Flutter app for small business: manage **orders**, **products**, and **clients** with authentication.
 
-This project is a starting point for a Flutter application.
+## Features
 
-A few resources to get you started if this is your first Flutter project:
+- **Auth** — Firebase (email/password), sign in / create account, auth redirect
+- **Orders** — Full CRUD, status workflow (New → In Progress → Done / Cancelled), search, filter by status, sort by date/total/status, multi-select and batch delete
+- **Products** — Full CRUD (name, price, stock, notes), list with pull-to-refresh
+- **Clients** — Full CRUD (name, phone, email, notes), list with pull-to-refresh
+- **Settings** — Sign out
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Tech stack
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- Flutter, Dart
+- **State:** Riverpod (AsyncNotifier)
+- **Navigation:** go_router (auth redirect, bottom nav shell)
+- **Auth:** Firebase Auth
+- **Backend:** REST API (Dio); currently configured for mock API (e.g. mockapi.io). Ready to swap to Firebase Firestore or another backend by changing the data layer only.
+
+## How to run
+
+1. Clone the repo, then: `flutter pub get`
+2. Add your Firebase config (e.g. `flutterfire configure` or place `google-services.json` / `GoogleService-Info.plist`).
+3. If using a mock API: set the base URL in `lib/core/dio_client.dart`. Create resources for `/orders`, `/products`, `/clients` with the expected fields.
+4. Run: `flutter run`
+
+## Project structure
+
+- **Domain** — Models (Order, Product, Client) and repository interfaces
+- **Data** — DTOs, API classes (Dio), repository implementations, Riverpod providers
+- **Controllers** — Riverpod AsyncNotifier for each feature
+- **UI** — Screens under `lib/features/screens/`

@@ -30,7 +30,9 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                 builder: (_) => const _CreateProductDialog(),
               );
               if (result != null && context.mounted) {
-                await ref.read(productsControllerProvider.notifier).addProduct(
+                await ref
+                    .read(productsControllerProvider.notifier)
+                    .addProduct(
                       name: result.name,
                       price: result.price,
                       stock: result.stock,
@@ -136,8 +138,9 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                               FilledButton(
                                 onPressed: () => Navigator.pop(ctx, true),
                                 style: FilledButton.styleFrom(
-                                  backgroundColor:
-                                      Theme.of(ctx).colorScheme.error,
+                                  backgroundColor: Theme.of(
+                                    ctx,
+                                  ).colorScheme.error,
                                 ),
                                 child: const Text('Delete'),
                               ),
