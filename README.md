@@ -17,13 +17,13 @@ Flutter app for small business: manage **orders**, **products**, and **clients**
 - **State:** Riverpod (AsyncNotifier)
 - **Navigation:** go_router (auth redirect, bottom nav shell)
 - **Auth:** Firebase Auth
-- **Backend:** REST API (Dio); currently configured for mock API (e.g. mockapi.io). Ready to swap to Firebase Firestore or another backend by changing the data layer only.
+- **Backend:** Supabase REST API (Dio). Data stored in Supabase (orders, products, clients).
 
 ## How to run
 
 1. Clone the repo, then: `flutter pub get`
 2. Add your Firebase config (e.g. `flutterfire configure` or place `google-services.json` / `GoogleService-Info.plist`).
-3. If using a mock API: set the base URL in `lib/core/dio_client.dart`. Create resources for `/orders`, `/products`, `/clients` with the expected fields.
+3. **Supabase:** In `lib/core/supabase_config.dart`, set `supabaseAnonKey` to your project’s anon key (Project Settings → API → anon public).
 4. Run: `flutter run`
 
 ## Project structure

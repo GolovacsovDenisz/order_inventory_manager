@@ -18,16 +18,27 @@ class ClientsApi {
   }
 
   Future<ClientDto> createClient(Map<String, dynamic> body) async {
-    final res = await _dio.post('/clients', data: body);
-    return ClientDto.fromJson(Map<String, dynamic>.from(res.data));
+    final data = Map<String, dynamic>.from(body)..remove('id');
+    final res = await _dio.post('/clients', data: data);
+    final row = _singleRowFromResponse(res.data);
+    return ClientDto.fromJson(Map<String, dynamic>.from(row));
   }
 
   Future<ClientDto> updateClient(String id, Map<String, dynamic> body) async {
-    final res = await _dio.put('/clients/$id', data: body);
-    return ClientDto.fromJson(Map<String, dynamic>.from(res.data));
+    final data = Map<String, dynamic>.from(body)..remove('id');
+    final res = await _dio.patch('/clients?id=eq.$id', data: data);
+    final row = _singleRowFromResponse(res.data);
+    return ClientDto.fromJson(Map<String, dynamic>.from(row));
   }
 
   Future<void> deleteClient(String id) async {
-    await _dio.delete('/clients/$id');
+    await _dio.delete('/clients?id=eq.$id');
+  }
+
+  static Map<String, dynamic> _singleRowFromResponse(dynamic resData) {
+    if (resData is List && resData.isNotEmpty) {
+      return Map<String, dynamic>.from(resData.first as Map);
+    }
+    return Map<String, dynamic>.from(resData as Map);
   }
 }

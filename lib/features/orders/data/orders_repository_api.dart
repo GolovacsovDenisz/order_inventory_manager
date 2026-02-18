@@ -1,5 +1,4 @@
 import 'package:order_inventory_manager/features/orders/data/order_dto.dart';
-import 'package:order_inventory_manager/features/orders/domain/order_status.dart';
 
 import '../domain/order.dart';
 import '../domain/orders_repository.dart';
@@ -21,9 +20,10 @@ class OrdersRepositoryApi implements OrdersRepository {
     final dto = OrderDto(
       id: order.id,
       title: order.title,
-      status: order.status.label,
+      status: order.status.name,
       total: order.total,
       createdAt: order.createdAt.toUtc().toIso8601String(),
+      clientId: order.clientId,
       notes: order.notes,
     );
 
@@ -36,9 +36,10 @@ class OrdersRepositoryApi implements OrdersRepository {
     final dto = OrderDto(
       id: order.id,
       title: order.title,
-      status: order.status.label,
+      status: order.status.name,
       total: order.total,
       createdAt: order.createdAt.toUtc().toIso8601String(),
+      clientId: order.clientId,
       notes: order.notes,
     );
     return _api.updateOrder(order.id, dto.toJson()).then((value) => value.toDomain());
