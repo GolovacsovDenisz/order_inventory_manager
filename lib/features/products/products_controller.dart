@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:order_inventory_manager/features/products/data/products_cache.dart';
 import 'package:order_inventory_manager/features/products/data/products_providers.dart';
 import 'package:order_inventory_manager/features/products/domain/product.dart';
 import 'package:order_inventory_manager/features/products/domain/products_repository.dart';
@@ -13,12 +14,27 @@ class ProductsController extends AsyncNotifier<List<Product>> {
 
   @override
   Future<List<Product>> build() async {
-    return _repo.fetchProducts();
+    final cached = await loadProductsCache();
+    if (cached != null && cached.isNotEmpty) {
+      state = AsyncData(cached);
+    }
+    try {
+      final fresh = await _repo.fetchProducts();
+      await saveProductsCache(fresh);
+      return fresh;
+    } catch (e) {
+      if (cached != null && cached.isNotEmpty) return cached;
+      rethrow;
+    }
   }
 
   Future<void> refresh() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async => _repo.fetchProducts());
+    state = await AsyncValue.guard(() async {
+      final fresh = await _repo.fetchProducts();
+      await saveProductsCache(fresh);
+      return fresh;
+    });
   }
 
   Future<void> updateProduct(Product product) async {

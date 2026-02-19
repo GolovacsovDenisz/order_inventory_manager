@@ -37,6 +37,7 @@ dependencies:
   firebase_core: ^4.4.0
   firebase_auth: ^6.1.4
   pretty_dio_logger: ^1.4.0
+  shared_preferences: ^2.5.4
   
 dev_dependencies:
   flutter_test:

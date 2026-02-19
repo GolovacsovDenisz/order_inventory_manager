@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:order_inventory_manager/features/clients/data/clients_cache.dart';
 import 'package:order_inventory_manager/features/clients/data/clients_providers.dart';
 import 'package:order_inventory_manager/features/clients/domain/client.dart';
 import 'package:order_inventory_manager/features/clients/domain/clients_repository.dart';
@@ -13,12 +14,27 @@ class ClientsController extends AsyncNotifier<List<Client>> {
 
   @override
   Future<List<Client>> build() async {
-    return _repo.fetchClients();
+    final cached = await loadClientsCache();
+    if (cached != null && cached.isNotEmpty) {
+      state = AsyncData(cached);
+    }
+    try {
+      final fresh = await _repo.fetchClients();
+      await saveClientsCache(fresh);
+      return fresh;
+    } catch (e) {
+      if (cached != null && cached.isNotEmpty) return cached;
+      rethrow;
+    }
   }
 
   Future<void> refresh() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async => _repo.fetchClients());
+    state = await AsyncValue.guard(() async {
+      final fresh = await _repo.fetchClients();
+      await saveClientsCache(fresh);
+      return fresh;
+    });
   }
 
   Future<void> addClient({

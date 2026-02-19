@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:order_inventory_manager/features/orders/data/orders_cache.dart';
 import 'package:order_inventory_manager/features/orders/data/orders_providers.dart';
 import 'package:order_inventory_manager/features/orders/domain/order.dart';
 import 'package:order_inventory_manager/features/orders/domain/order_status.dart';
@@ -12,12 +13,27 @@ class OrdersController extends AsyncNotifier<List<Order>> {
 
   @override
   Future<List<Order>> build() async {
-    return _repo.fetchOrders();
+    final cached = await loadOrdersCache();
+    if (cached != null && cached.isNotEmpty) {
+      state = AsyncData(cached);
+    }
+    try {
+      final fresh = await _repo.fetchOrders();
+      await saveOrdersCache(fresh);
+      return fresh;
+    } catch (e) {
+      if (cached != null && cached.isNotEmpty) return cached;
+      rethrow;
+    }
   }
 
   Future<void> refresh() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async => _repo.fetchOrders());
+    state = await AsyncValue.guard(() async {
+      final fresh = await _repo.fetchOrders();
+      await saveOrdersCache(fresh);
+      return fresh;
+    });
   }
 
   Future<void> updateOrder(Order order) async {

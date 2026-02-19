@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:order_inventory_manager/features/orders/data/orders_prefs.dart';
 import 'package:order_inventory_manager/features/orders/domain/order.dart';
 import 'package:order_inventory_manager/features/orders/domain/order_status.dart';
 import 'package:order_inventory_manager/features/orders/orders_controller.dart';
@@ -54,6 +55,47 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _loadOrdersPrefs();
+  }
+
+  /// Load last saved filter/sort from disk and apply to state.
+  Future<void> _loadOrdersPrefs() async {
+    final prefs = await loadOrdersPrefs();
+    if (!mounted) return;
+    setState(() {
+      _filterStatus = prefs.filterStatus;
+      _sortField = _sortFieldFromString(prefs.sortField);
+      _sortAscending = prefs.sortAscending;
+    });
+  }
+
+  static _OrderSortField _sortFieldFromString(String s) {
+    switch (s) {
+      case 'total':
+        return _OrderSortField.total;
+      case 'status':
+        return _OrderSortField.status;
+      default:
+        return _OrderSortField.date;
+    }
+  }
+
+  /// Persist current filter/sort so they restore on next open.
+  void _saveOrdersPrefs({
+    OrderStatus? filterStatus,
+    String? sortField,
+    bool? sortAscending,
+  }) {
+    saveOrdersPrefs(
+      filterStatus: filterStatus ?? _filterStatus,
+      sortField: sortField ?? _sortField.name,
+      sortAscending: sortAscending ?? _sortAscending,
+    );
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
@@ -78,6 +120,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
             _sortField = field;
             _sortAscending = true;
           });
+          _saveOrdersPrefs(sortField: field.name, sortAscending: true);
           Navigator.pop(ctx);
         },
       ),
@@ -92,6 +135,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
             _sortField = field;
             _sortAscending = false;
           });
+          _saveOrdersPrefs(sortField: field.name, sortAscending: false);
           Navigator.pop(ctx);
         },
       ),
@@ -244,11 +288,13 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
                                   groupValue: _filterStatus,
                                   onChanged: (v) {
                                     setState(() => _filterStatus = null);
+                                    _saveOrdersPrefs(filterStatus: null);
                                     Navigator.pop(ctx);
                                   },
                                 ),
                                 onTap: () {
                                   setState(() => _filterStatus = null);
+                                  _saveOrdersPrefs(filterStatus: null);
                                   Navigator.pop(ctx);
                                 },
                               ),
@@ -260,11 +306,13 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
                                     groupValue: _filterStatus,
                                     onChanged: (v) {
                                       setState(() => _filterStatus = status);
+                                      _saveOrdersPrefs(filterStatus: status);
                                       Navigator.pop(ctx);
                                     },
                                   ),
                                   onTap: () {
                                     setState(() => _filterStatus = status);
+                                    _saveOrdersPrefs(filterStatus: status);
                                     Navigator.pop(ctx);
                                   },
                                 ),

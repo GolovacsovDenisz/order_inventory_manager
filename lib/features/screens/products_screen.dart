@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:order_inventory_manager/features/products/data/products_favorites_prefs.dart';
 import 'package:order_inventory_manager/features/products/products_controller.dart';
 
 class ProductsScreen extends ConsumerStatefulWidget {
@@ -10,6 +11,25 @@ class ProductsScreen extends ConsumerStatefulWidget {
 }
 
 class _ProductsScreenState extends ConsumerState<ProductsScreen> {
+  Set<String> _favoriteIds = {};
+  bool _showFavoritesOnly = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavorites();
+  }
+
+  Future<void> _loadFavorites() async {
+    final ids = await loadFavoriteProductIds();
+    if (mounted) setState(() => _favoriteIds = ids);
+  }
+
+  Future<void> _toggleFavorite(String productId) async {
+    final next = await toggleFavoriteProductId(productId);
+    if (mounted) setState(() => _favoriteIds = next);
+  }
+
   @override
   Widget build(BuildContext context) {
     final productsAsync = ref.watch(productsControllerProvider);
@@ -22,6 +42,14 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
           icon: const Icon(Icons.refresh),
         ),
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: const Text('Favorites'),
+              selected: _showFavoritesOnly,
+              onSelected: (v) => setState(() => _showFavoritesOnly = v),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () async {
@@ -78,23 +106,42 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
             ),
           ),
         ),
-        data: (products) => products.isEmpty
-            ? const Center(child: Text('No products yet'))
-            : RefreshIndicator(
-                onRefresh: () =>
-                    ref.read(productsControllerProvider.notifier).refresh(),
-                child: ListView.separated(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  itemCount: products.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final p = products[index];
-                    return ListTile(
-                      title: Text(p.name),
-                      subtitle: Text(
-                        '\$${p.price.toStringAsFixed(2)} · Stock: ${p.stock}',
-                      ),
-                      onTap: () async {
+        data: (products) {
+          final displayList = _showFavoritesOnly
+              ? products.where((p) => _favoriteIds.contains(p.id)).toList()
+              : products;
+          if (displayList.isEmpty) {
+            return Center(
+              child: Text(
+                _showFavoritesOnly
+                    ? 'No favorite products'
+                    : 'No products yet',
+              ),
+            );
+          }
+          return RefreshIndicator(
+            onRefresh: () =>
+                ref.read(productsControllerProvider.notifier).refresh(),
+            child: ListView.separated(
+              physics: const AlwaysScrollableScrollPhysics(),
+              itemCount: displayList.length,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final p = displayList[index];
+                final isFavorite = _favoriteIds.contains(p.id);
+                return ListTile(
+                  title: Text(p.name),
+                  subtitle: Text(
+                    '\$${p.price.toStringAsFixed(2)} · Stock: ${p.stock}',
+                  ),
+                  trailing: IconButton(
+                    icon: Icon(
+                      isFavorite ? Icons.favorite : Icons.favorite_border,
+                      color: isFavorite ? Colors.red : null,
+                    ),
+                    onPressed: () => _toggleFavorite(p.id),
+                  ),
+                  onTap: () async {
                         final result = await showDialog<_EditProductResult>(
                           context: context,
                           builder: (_) => _EditProductDialog(
@@ -161,7 +208,8 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                     );
                   },
                 ),
-              ),
+            );
+        },
       ),
     );
   }
