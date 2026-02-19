@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:order_inventory_manager/core/widgets/snackbars.dart';
+import 'package:order_inventory_manager/core/widgets/empty_state.dart';
 import 'package:order_inventory_manager/features/products/data/products_favorites_prefs.dart';
 import 'package:order_inventory_manager/features/products/products_controller.dart';
 
@@ -67,9 +69,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                       notes: result.notes,
                     );
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Product created')),
-                  );
+                  showSuccessSnackBar(context, 'Product created');
                 }
               }
             },
@@ -111,12 +111,11 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
               ? products.where((p) => _favoriteIds.contains(p.id)).toList()
               : products;
           if (displayList.isEmpty) {
-            return Center(
-              child: Text(
-                _showFavoritesOnly
-                    ? 'No favorite products'
-                    : 'No products yet',
-              ),
+            return EmptyState(
+              icon: Icons.inventory_2,
+              message: _showFavoritesOnly
+                  ? 'No favorite products'
+                  : 'No products yet',
             );
           }
           return RefreshIndicator(
@@ -129,10 +128,46 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
               itemBuilder: (context, index) {
                 final p = displayList[index];
                 final isFavorite = _favoriteIds.contains(p.id);
+                final theme = Theme.of(context);
                 return ListTile(
-                  title: Text(p.name),
-                  subtitle: Text(
-                    '\$${p.price.toStringAsFixed(2)} · Stock: ${p.stock}',
+                  leading: CircleAvatar(
+                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                    child: Icon(
+                      Icons.inventory_2,
+                      color: theme.colorScheme.onSurfaceVariant,
+                      size: 22,
+                    ),
+                  ),
+                  title: Text(
+                    p.name,
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Row(
+                      children: [
+                        Text(
+                          '\$${p.price.toStringAsFixed(2)}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Chip(
+                          label: Text(
+                            'Stock: ${p.stock}',
+                            style: theme.textTheme.labelSmall,
+                          ),
+                          visualDensity: VisualDensity.compact,
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          backgroundColor: theme.colorScheme.surfaceContainerHigh,
+                        ),
+                      ],
+                    ),
                   ),
                   trailing: IconButton(
                     icon: Icon(
@@ -142,73 +177,67 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                     onPressed: () => _toggleFavorite(p.id),
                   ),
                   onTap: () async {
-                        final result = await showDialog<_EditProductResult>(
-                          context: context,
-                          builder: (_) => _EditProductDialog(
-                            name: p.name,
-                            price: p.price,
-                            stock: p.stock,
-                            notes: p.notes,
-                          ),
-                        );
-                        if (result != null && context.mounted) {
-                          await ref
-                              .read(productsControllerProvider.notifier)
-                              .updateProduct(
-                                p.copyWith(
-                                  name: result.name,
-                                  price: result.price,
-                                  stock: result.stock,
-                                  notes: result.notes,
-                                ),
-                              );
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Product updated')),
-                            );
-                          }
-                        }
-                      },
-                      onLongPress: () async {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            title: const Text('Delete product?'),
-                            content: Text(
-                              'Delete "${p.name}"? This cannot be undone.',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(ctx, false),
-                                child: const Text('Cancel'),
-                              ),
-                              FilledButton(
-                                onPressed: () => Navigator.pop(ctx, true),
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: Theme.of(
-                                    ctx,
-                                  ).colorScheme.error,
-                                ),
-                                child: const Text('Delete'),
-                              ),
-                            ],
-                          ),
-                        );
-                        if (confirm == true && context.mounted) {
-                          await ref
-                              .read(productsControllerProvider.notifier)
-                              .deleteProduct(p.id);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Product deleted')),
-                            );
-                          }
-                        }
-                      },
+                    final result = await showDialog<_EditProductResult>(
+                      context: context,
+                      builder: (_) => _EditProductDialog(
+                        name: p.name,
+                        price: p.price,
+                        stock: p.stock,
+                        notes: p.notes,
+                      ),
                     );
+                    if (result != null && context.mounted) {
+                      await ref
+                          .read(productsControllerProvider.notifier)
+                          .updateProduct(
+                            p.copyWith(
+                              name: result.name,
+                              price: result.price,
+                              stock: result.stock,
+                              notes: result.notes,
+                            ),
+                          );
+                      if (context.mounted) {
+                        showSuccessSnackBar(context, 'Product updated');
+                      }
+                    }
                   },
-                ),
-            );
+                  onLongPress: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Delete product?'),
+                        content: Text(
+                          'Delete "${p.name}"? This cannot be undone.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Cancel'),
+                          ),
+                          FilledButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Theme.of(ctx).colorScheme.error,
+                            ),
+                            child: const Text('Delete'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm == true && context.mounted) {
+                      await ref
+                          .read(productsControllerProvider.notifier)
+                          .deleteProduct(p.id);
+                      if (context.mounted) {
+                        showSuccessSnackBar(context, 'Product deleted');
+                      }
+                    }
+                  },
+                );
+              },
+            ),
+          );
         },
       ),
     );

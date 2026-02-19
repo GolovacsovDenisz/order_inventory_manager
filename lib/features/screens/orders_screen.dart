@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:order_inventory_manager/core/widgets/snackbars.dart';
+import 'package:order_inventory_manager/core/widgets/empty_state.dart';
 import 'package:order_inventory_manager/features/orders/data/orders_prefs.dart';
 import 'package:order_inventory_manager/features/orders/domain/order.dart';
 import 'package:order_inventory_manager/features/orders/domain/order_status.dart';
@@ -174,9 +176,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
     }
     if (mounted) {
       _exitSelectionMode();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${toDelete.length} order(s) deleted')),
-      );
+      showSuccessSnackBar(context, '${toDelete.length} order(s) deleted');
     }
   }
 
@@ -369,12 +369,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
                               total: result.total,
                               notes: result.notes,
                             );
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Order created'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
+                        showSuccessSnackBar(context, 'Order created');
                       }
                     },
                     icon: Icon(Icons.add),
@@ -429,22 +424,18 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
               : filtered.where((o) => o.status == _filterStatus).toList();
 
           if (orders.isEmpty) {
-            return const Center(child: Text('No orders yet'));
+            return const EmptyState(icon: Icons.shopping_bag, message: 'No orders yet');
           }
           if (filtered.isEmpty) {
-            return Center(
-              child: Text(
-                'No orders match "$query"',
-                textAlign: TextAlign.center,
-              ),
+            return EmptyState(
+              icon: Icons.search_off,
+              message: 'No orders match "$query"',
             );
           }
           if (statusFiltered.isEmpty) {
-            return Center(
-              child: Text(
-                'No orders with status "${_filterStatus!.label}"',
-                textAlign: TextAlign.center,
-              ),
+            return EmptyState(
+              icon: Icons.filter_list_off,
+              message: 'No orders with status "${_filterStatus!.label}"',
             );
           }
 
@@ -482,7 +473,15 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
                           value: _selectedIds.contains(o.id),
                           onChanged: (v) => _toggleSelection(o.id),
                         )
-                      : null,
+                      : CircleAvatar(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.surfaceContainerHighest,
+                          child: Icon(
+                            Icons.receipt_long,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            size: 22,
+                          ),
+                        ),
                   onLongPress: _isSelectionMode
                       ? null
                       : () => _enterSelectionMode(o.id),
@@ -507,15 +506,14 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
                                     notes: result.notes,
                                   ),
                                 );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Order updated')),
-                            );
+                            showSuccessSnackBar(context, 'Order updated');
                           }
                         },
                   title: Text(
                     o.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -540,24 +538,22 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
                                 o.copyWith(status: newStatus),
                               );
                               if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Status updated')),
-                                );
+                                showSuccessSnackBar(context, 'Status updated');
                               }
                             },
                             child: _StatusChip(o.status),
                           ),
                           Text(
-                            formatDate(o.createdAt),
+                            '${formatDate(o.createdAt)} · ${formatMoney(o.total)}',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
                       ),
                     ],
                   ),
-                  trailing: Text(
-                    formatMoney(o.total),
-                    style: Theme.of(context).textTheme.titleMedium,
+                  trailing: Icon(
+                    Icons.chevron_right,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 );
               },

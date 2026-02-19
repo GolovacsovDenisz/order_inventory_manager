@@ -5,10 +5,10 @@ const String _keyFilterStatus = 'orders_filter_status';
 const String _keySortField = 'orders_sort_field';
 const String _keySortAscending = 'orders_sort_ascending';
 
-/// Saved filter/sort state for the Orders screen.
+
 class OrdersPrefsState {
   final OrderStatus? filterStatus;
-  final String sortField; // 'date', 'total', 'status'
+  final String sortField; 
   final bool sortAscending;
 
   const OrdersPrefsState({
@@ -40,7 +40,7 @@ Future<OrdersPrefsState> loadOrdersPrefs() async {
   );
 }
 
-/// Save Orders filter and sort so they can be restored next time.
+
 Future<void> saveOrdersPrefs({
   OrderStatus? filterStatus,
   required String sortField,

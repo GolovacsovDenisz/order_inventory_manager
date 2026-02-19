@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:order_inventory_manager/core/widgets/snackbars.dart';
+import 'package:order_inventory_manager/core/widgets/empty_state.dart';
 import 'package:order_inventory_manager/features/clients/clients_controller.dart';
 
 class ClientsScreen extends ConsumerStatefulWidget {
@@ -37,9 +39,7 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
                       email: result.email,
                     );
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Client created')),
-                  );
+                  showSuccessSnackBar(context, 'Client created');
                 }
               }
             },
@@ -77,7 +77,7 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
           ),
         ),
         data: (clients) => clients.isEmpty
-            ? const Center(child: Text('No clients yet'))
+            ? const EmptyState(icon: Icons.people_alt, message: 'No clients yet')
             : RefreshIndicator(
                 onRefresh: () =>
                     ref.read(clientsControllerProvider.notifier).refresh(),
@@ -87,9 +87,45 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
                   separatorBuilder: (_, __) => const Divider(height: 1),
                   itemBuilder: (context, index) {
                     final c = clients[index];
+                    final theme = Theme.of(context);
+                    final initial = c.name.isNotEmpty
+                        ? c.name.trim().substring(0, 1).toUpperCase()
+                        : '?';
+                    final contactParts = [c.phone, c.email]
+                        .where((s) => s != null && s.isNotEmpty)
+                        .cast<String>()
+                        .toList();
+                    final contact = contactParts.isEmpty
+                        ? 'No contact'
+                        : contactParts.join(' · ');
                     return ListTile(
-                      title: Text(c.name),
-                      subtitle: Text(c.phone ?? 'No phone'),
+                      leading: CircleAvatar(
+                        backgroundColor: theme.colorScheme.primaryContainer,
+                        child: Text(
+                          initial,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: theme.colorScheme.onPrimaryContainer,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        c.name,
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          contact,
+                          style: theme.textTheme.bodySmall,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      trailing: Icon(
+                        Icons.chevron_right,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                       onTap: () async {
                         final result = await showDialog<_EditClientResult>(
                           context: context,
@@ -112,9 +148,7 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
                                 ),
                               );
                           if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Client updated')),
-                            );
+                            showSuccessSnackBar(context, 'Client updated');
                           }
                         }
                       },
@@ -147,9 +181,7 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
                               .read(clientsControllerProvider.notifier)
                               .deleteClient(c.id);
                           if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Client deleted')),
-                            );
+                            showSuccessSnackBar(context, 'Client deleted');
                           }
                         }
                       },

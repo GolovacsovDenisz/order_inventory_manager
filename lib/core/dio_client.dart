@@ -40,9 +40,9 @@ Dio createDioClient(Future<String?> Function() getAuthToken) {
     InterceptorsWrapper(
       onError: (error, handler) async {
         final opts = error.requestOptions;
+        final statusCode = error.response?.statusCode;
         final retryCount = opts.extra['_retryCount'] as int? ?? 0;
         const maxRetries = 2;
-        final statusCode = error.response?.statusCode;
         final is5xx = statusCode != null && statusCode >= 500 && statusCode < 600;
         final isRetryableType = error.type == DioExceptionType.connectionTimeout ||
             error.type == DioExceptionType.receiveTimeout ||
