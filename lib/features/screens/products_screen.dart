@@ -69,7 +69,12 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                       notes: result.notes,
                     );
                 if (context.mounted) {
-                  showSuccessSnackBar(context, 'Product created');
+                  final state = ref.read(productsControllerProvider);
+                  if (state.hasError) {
+                    showErrorSnackBar(context, 'Operation failed');
+                  } else {
+                    showSuccessSnackBar(context, 'Product created');
+                  }
                 }
               }
             },
@@ -198,7 +203,12 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                             ),
                           );
                       if (context.mounted) {
-                        showSuccessSnackBar(context, 'Product updated');
+                        final state = ref.read(productsControllerProvider);
+                        if (state.hasError) {
+                          showErrorSnackBar(context, 'Operation failed');
+                        } else {
+                          showSuccessSnackBar(context, 'Product updated');
+                        }
                       }
                     }
                   },
@@ -230,7 +240,12 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                           .read(productsControllerProvider.notifier)
                           .deleteProduct(p.id);
                       if (context.mounted) {
-                        showSuccessSnackBar(context, 'Product deleted');
+                        final state = ref.read(productsControllerProvider);
+                        if (state.hasError) {
+                          showErrorSnackBar(context, 'Operation failed');
+                        } else {
+                          showSuccessSnackBar(context, 'Product deleted');
+                        }
                       }
                     }
                   },
@@ -293,50 +308,94 @@ class _CreateProductDialogState extends State<_CreateProductDialog> {
     super.dispose();
   }
 
+  InputDecoration _inputDecoration(String label, {IconData? icon}) {
+    final theme = Theme.of(context);
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: icon != null
+          ? Icon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant)
+          : null,
+      filled: true,
+      fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.6),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(
+            color: theme.colorScheme.outline.withOpacity(0.4)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: theme.colorScheme.error),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
       title: const Text('Create product'),
+      contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
       content: Form(
         key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _name,
-              decoration: const InputDecoration(labelText: 'Name'),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Required' : null,
-            ),
-            TextFormField(
-              controller: _price,
-              decoration: const InputDecoration(labelText: 'Price'),
-              keyboardType: TextInputType.number,
-              validator: (v) {
-                final x = double.tryParse((v ?? '').replaceAll(',', '.'));
-                if (x == null) return 'Enter a number';
-                if (x < 0) return 'Must be >= 0';
-                return null;
-              },
-            ),
-            TextFormField(
-              controller: _stock,
-              decoration: const InputDecoration(labelText: 'Stock'),
-              keyboardType: TextInputType.number,
-              validator: (v) {
-                final x = int.tryParse(v ?? '');
-                if (x == null) return 'Enter a number';
-                if (x < 0) return 'Must be >= 0';
-                return null;
-              },
-            ),
-            TextFormField(
-              controller: _notes,
-              decoration: const InputDecoration(labelText: 'Notes (optional)'),
-            ),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextFormField(
+                controller: _name,
+                decoration: _inputDecoration('Name', icon: Icons.inventory_2),
+                textInputAction: TextInputAction.next,
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? 'Required' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _price,
+                decoration: _inputDecoration('Price', icon: Icons.attach_money),
+                keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true),
+                textInputAction: TextInputAction.next,
+                validator: (v) {
+                  final x = double.tryParse((v ?? '').replaceAll(',', '.'));
+                  if (x == null) return 'Enter a number';
+                  if (x < 0) return 'Must be >= 0';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _stock,
+                decoration: _inputDecoration('Stock', icon: Icons.numbers),
+                keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.next,
+                validator: (v) {
+                  final x = int.tryParse(v ?? '');
+                  if (x == null) return 'Enter a number';
+                  if (x < 0) return 'Must be >= 0';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _notes,
+                decoration: _inputDecoration('Notes (optional)', icon: Icons.note_outlined),
+                textInputAction: TextInputAction.done,
+                maxLines: 2,
+              ),
+            ],
+          ),
         ),
       ),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
@@ -404,50 +463,94 @@ class _EditProductDialogState extends State<_EditProductDialog> {
     super.dispose();
   }
 
+  InputDecoration _inputDecoration(String label, {IconData? icon}) {
+    final theme = Theme.of(context);
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: icon != null
+          ? Icon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant)
+          : null,
+      filled: true,
+      fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.6),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(
+            color: theme.colorScheme.outline.withOpacity(0.4)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: theme.colorScheme.error),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
       title: const Text('Edit product'),
+      contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
       content: Form(
         key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _name,
-              decoration: const InputDecoration(labelText: 'Name'),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Required' : null,
-            ),
-            TextFormField(
-              controller: _price,
-              decoration: const InputDecoration(labelText: 'Price'),
-              keyboardType: TextInputType.number,
-              validator: (v) {
-                final x = double.tryParse((v ?? '').replaceAll(',', '.'));
-                if (x == null) return 'Enter a number';
-                if (x < 0) return 'Must be >= 0';
-                return null;
-              },
-            ),
-            TextFormField(
-              controller: _stock,
-              decoration: const InputDecoration(labelText: 'Stock'),
-              keyboardType: TextInputType.number,
-              validator: (v) {
-                final x = int.tryParse(v ?? '');
-                if (x == null) return 'Enter a number';
-                if (x < 0) return 'Must be >= 0';
-                return null;
-              },
-            ),
-            TextFormField(
-              controller: _notes,
-              decoration: const InputDecoration(labelText: 'Notes (optional)'),
-            ),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextFormField(
+                controller: _name,
+                decoration: _inputDecoration('Name', icon: Icons.inventory_2),
+                textInputAction: TextInputAction.next,
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? 'Required' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _price,
+                decoration: _inputDecoration('Price', icon: Icons.attach_money),
+                keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true),
+                textInputAction: TextInputAction.next,
+                validator: (v) {
+                  final x = double.tryParse((v ?? '').replaceAll(',', '.'));
+                  if (x == null) return 'Enter a number';
+                  if (x < 0) return 'Must be >= 0';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _stock,
+                decoration: _inputDecoration('Stock', icon: Icons.numbers),
+                keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.next,
+                validator: (v) {
+                  final x = int.tryParse(v ?? '');
+                  if (x == null) return 'Enter a number';
+                  if (x < 0) return 'Must be >= 0';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _notes,
+                decoration: _inputDecoration('Notes (optional)', icon: Icons.note_outlined),
+                textInputAction: TextInputAction.done,
+                maxLines: 2,
+              ),
+            ],
+          ),
         ),
       ),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),

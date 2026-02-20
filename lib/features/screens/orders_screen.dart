@@ -176,7 +176,12 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
     }
     if (mounted) {
       _exitSelectionMode();
-      showSuccessSnackBar(context, '${toDelete.length} order(s) deleted');
+      final state = ref.read(ordersControllerProvider);
+      if (state.hasError) {
+        showErrorSnackBar(context, 'Operation failed');
+      } else {
+        showSuccessSnackBar(context, '${toDelete.length} order(s) deleted');
+      }
     }
   }
 
@@ -369,7 +374,14 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
                               total: result.total,
                               notes: result.notes,
                             );
-                        showSuccessSnackBar(context, 'Order created');
+                        if (context.mounted) {
+                          final state = ref.read(ordersControllerProvider);
+                          if (state.hasError) {
+                            showErrorSnackBar(context, 'Operation failed');
+                          } else {
+                            showSuccessSnackBar(context, 'Order created');
+                          }
+                        }
                       }
                     },
                     icon: Icon(Icons.add),
@@ -506,7 +518,14 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
                                     notes: result.notes,
                                   ),
                                 );
-                            showSuccessSnackBar(context, 'Order updated');
+                            if (context.mounted) {
+                              final state = ref.read(ordersControllerProvider);
+                              if (state.hasError) {
+                                showErrorSnackBar(context, 'Operation failed');
+                              } else {
+                                showSuccessSnackBar(context, 'Order updated');
+                              }
+                            }
                           }
                         },
                   title: Text(
@@ -538,7 +557,12 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
                                 o.copyWith(status: newStatus),
                               );
                               if (context.mounted) {
-                                showSuccessSnackBar(context, 'Status updated');
+                                final state = ref.read(ordersControllerProvider);
+                                if (state.hasError) {
+                                  showErrorSnackBar(context, 'Operation failed');
+                                } else {
+                                  showSuccessSnackBar(context, 'Status updated');
+                                }
                               }
                             },
                             child: _StatusChip(o.status),
@@ -623,39 +647,81 @@ class _EditOrderDialogState extends State<_EditOrderDialog> {
     super.dispose();
   }
 
+  InputDecoration _inputDecoration(String label, {IconData? icon}) {
+    final theme = Theme.of(context);
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: icon != null
+          ? Icon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant)
+          : null,
+      filled: true,
+      fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.6),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(
+            color: theme.colorScheme.outline.withOpacity(0.4)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: theme.colorScheme.error),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
       title: const Text('Edit order'),
+      contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
       content: Form(
         key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _title,
-              decoration: const InputDecoration(labelText: 'Title'),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Required' : null,
-            ),
-            TextFormField(
-              controller: _total,
-              decoration: const InputDecoration(labelText: 'Total'),
-              keyboardType: TextInputType.number,
-              validator: (v) {
-                final x = double.tryParse((v ?? '').replaceAll(',', '.'));
-                if (x == null) return 'Enter a number';
-                if (x < 0) return 'Must be >= 0';
-                return null;
-              },
-            ),
-            TextFormField(
-              controller: _notes,
-              decoration: const InputDecoration(labelText: 'Notes (optional)'),
-            ),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextFormField(
+                controller: _title,
+                decoration: _inputDecoration('Title', icon: Icons.receipt_long),
+                textInputAction: TextInputAction.next,
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? 'Required' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _total,
+                decoration: _inputDecoration('Total', icon: Icons.attach_money),
+                keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true),
+                textInputAction: TextInputAction.next,
+                validator: (v) {
+                  final x = double.tryParse((v ?? '').replaceAll(',', '.'));
+                  if (x == null) return 'Enter a number';
+                  if (x < 0) return 'Must be >= 0';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _notes,
+                decoration: _inputDecoration('Notes (optional)', icon: Icons.note_outlined),
+                textInputAction: TextInputAction.done,
+                maxLines: 2,
+              ),
+            ],
+          ),
         ),
       ),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
@@ -673,7 +739,7 @@ class _EditOrderDialogState extends State<_EditOrderDialog> {
               ),
             );
           },
-          child: Text('Update'),
+          child: const Text('Update'),
         ),
       ],
     );
@@ -694,39 +760,81 @@ class _CreateOrderDialogState extends State<_CreateOrderDialog> {
     super.dispose();
   }
 
+  InputDecoration _inputDecoration(String label, {IconData? icon}) {
+    final theme = Theme.of(context);
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: icon != null
+          ? Icon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant)
+          : null,
+      filled: true,
+      fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.6),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(
+            color: theme.colorScheme.outline.withOpacity(0.4)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: theme.colorScheme.error),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
       title: const Text('Create order'),
+      contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
       content: Form(
         key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _title,
-              decoration: const InputDecoration(labelText: 'Title'),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Required' : null,
-            ),
-            TextFormField(
-              controller: _total,
-              decoration: const InputDecoration(labelText: 'Total'),
-              keyboardType: TextInputType.number,
-              validator: (v) {
-                final x = double.tryParse((v ?? '').replaceAll(',', '.'));
-                if (x == null) return 'Enter a number';
-                if (x < 0) return 'Must be >= 0';
-                return null;
-              },
-            ),
-            TextFormField(
-              controller: _notes,
-              decoration: const InputDecoration(labelText: 'Notes (optional)'),
-            ),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextFormField(
+                controller: _title,
+                decoration: _inputDecoration('Title', icon: Icons.receipt_long),
+                textInputAction: TextInputAction.next,
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? 'Required' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _total,
+                decoration: _inputDecoration('Total', icon: Icons.attach_money),
+                keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true),
+                textInputAction: TextInputAction.next,
+                validator: (v) {
+                  final x = double.tryParse((v ?? '').replaceAll(',', '.'));
+                  if (x == null) return 'Enter a number';
+                  if (x < 0) return 'Must be >= 0';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _notes,
+                decoration: _inputDecoration('Notes (optional)', icon: Icons.note_outlined),
+                textInputAction: TextInputAction.done,
+                maxLines: 2,
+              ),
+            ],
+          ),
         ),
       ),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),

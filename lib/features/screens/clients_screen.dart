@@ -39,7 +39,12 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
                       email: result.email,
                     );
                 if (context.mounted) {
-                  showSuccessSnackBar(context, 'Client created');
+                  final state = ref.read(clientsControllerProvider);
+                  if (state.hasError) {
+                    showErrorSnackBar(context, 'Operation failed');
+                  } else {
+                    showSuccessSnackBar(context, 'Client created');
+                  }
                 }
               }
             },
@@ -148,7 +153,12 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
                                 ),
                               );
                           if (context.mounted) {
-                            showSuccessSnackBar(context, 'Client updated');
+                            final state = ref.read(clientsControllerProvider);
+                            if (state.hasError) {
+                              showErrorSnackBar(context, 'Operation failed');
+                            } else {
+                              showSuccessSnackBar(context, 'Client updated');
+                            }
                           }
                         }
                       },
@@ -181,7 +191,12 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
                               .read(clientsControllerProvider.notifier)
                               .deleteClient(c.id);
                           if (context.mounted) {
-                            showSuccessSnackBar(context, 'Client deleted');
+                            final state = ref.read(clientsControllerProvider);
+                            if (state.hasError) {
+                              showErrorSnackBar(context, 'Operation failed');
+                            } else {
+                              showSuccessSnackBar(context, 'Client deleted');
+                            }
                           }
                         }
                       },
@@ -243,39 +258,81 @@ class _CreateClientDialogState extends State<_CreateClientDialog> {
     super.dispose();
   }
 
+  InputDecoration _inputDecoration(String label, {IconData? icon}) {
+    final theme = Theme.of(context);
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: icon != null
+          ? Icon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant)
+          : null,
+      filled: true,
+      fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.6),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(
+            color: theme.colorScheme.outline.withOpacity(0.4)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: theme.colorScheme.error),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
       title: const Text('Create client'),
+      contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
       content: Form(
         key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _name,
-              decoration: const InputDecoration(labelText: 'Name'),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Required' : null,
-            ),
-            TextFormField(
-              controller: _phone,
-              decoration: const InputDecoration(labelText: 'Phone (optional)'),
-              keyboardType: TextInputType.phone,
-            ),
-            TextFormField(
-              controller: _email,
-              decoration: const InputDecoration(labelText: 'Email (optional)'),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            TextFormField(
-              controller: _notes,
-              decoration: const InputDecoration(labelText: 'Notes (optional)'),
-              maxLines: 2,
-            ),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextFormField(
+                controller: _name,
+                decoration: _inputDecoration('Name', icon: Icons.person_outline),
+                textInputAction: TextInputAction.next,
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? 'Required' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _phone,
+                decoration: _inputDecoration('Phone (optional)', icon: Icons.phone_outlined),
+                keyboardType: TextInputType.phone,
+                textInputAction: TextInputAction.next,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _email,
+                decoration: _inputDecoration('Email (optional)', icon: Icons.email_outlined),
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _notes,
+                decoration: _inputDecoration('Notes (optional)', icon: Icons.note_outlined),
+                textInputAction: TextInputAction.done,
+                maxLines: 2,
+              ),
+            ],
+          ),
         ),
       ),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
@@ -343,39 +400,81 @@ class _EditClientDialogState extends State<_EditClientDialog> {
     super.dispose();
   }
 
+  InputDecoration _inputDecoration(String label, {IconData? icon}) {
+    final theme = Theme.of(context);
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: icon != null
+          ? Icon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant)
+          : null,
+      filled: true,
+      fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.6),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(
+            color: theme.colorScheme.outline.withOpacity(0.4)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: theme.colorScheme.error),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
       title: const Text('Edit client'),
+      contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
       content: Form(
         key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _name,
-              decoration: const InputDecoration(labelText: 'Name'),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Required' : null,
-            ),
-            TextFormField(
-              controller: _phone,
-              decoration: const InputDecoration(labelText: 'Phone (optional)'),
-              keyboardType: TextInputType.phone,
-            ),
-            TextFormField(
-              controller: _email,
-              decoration: const InputDecoration(labelText: 'Email (optional)'),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            TextFormField(
-              controller: _notes,
-              decoration: const InputDecoration(labelText: 'Notes (optional)'),
-              maxLines: 2,
-            ),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextFormField(
+                controller: _name,
+                decoration: _inputDecoration('Name', icon: Icons.person_outline),
+                textInputAction: TextInputAction.next,
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? 'Required' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _phone,
+                decoration: _inputDecoration('Phone (optional)', icon: Icons.phone_outlined),
+                keyboardType: TextInputType.phone,
+                textInputAction: TextInputAction.next,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _email,
+                decoration: _inputDecoration('Email (optional)', icon: Icons.email_outlined),
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _notes,
+                decoration: _inputDecoration('Notes (optional)', icon: Icons.note_outlined),
+                textInputAction: TextInputAction.done,
+                maxLines: 2,
+              ),
+            ],
+          ),
         ),
       ),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
